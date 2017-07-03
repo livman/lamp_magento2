@@ -6,12 +6,44 @@ RUN a2enmod rewrite
 RUN apt-get update \
   && apt-get install -y \
     cron \
+    vim \
     libfreetype6-dev \
     libicu-dev \
     libjpeg62-turbo-dev \
     libmcrypt-dev \
     libpng12-dev \
     libxslt1-dev
+
+# Install composer
+RUN curl https://getcomposer.org/installer | php -- && mv composer.phar /usr/local/bin/composer && chmod +x /usr/local/bin/composer
+
+# Install npm
+RUN apt-get install -y npm
+
+# Install memcached
+RUN apt-get install -y \
+        libmemcached11 \
+        libmemcachedutil2 \
+        libmemcached-dev \
+        libz-dev \
+        git \
+    && cd /root \
+    && git clone -b php7 https://github.com/php-memcached-dev/php-memcached \
+    && cd php-memcached \
+    && phpize \
+    && ./configure \
+    && make \
+    && make install \
+    && cd .. \
+    && rm -rf  php-memcached \
+    && echo extension=memcached.so >> /usr/local/etc/php/conf.d/memcached.ini \
+    && apt-get remove -y build-essential libmemcached-dev libz-dev \
+    && apt-get remove -y \
+        libmemcached-dev \
+        libz-dev \
+    && apt-get autoremove -y \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
 
 RUN docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/
 
@@ -24,6 +56,8 @@ RUN docker-php-ext-install \
   soap \
   xsl \
   json \
+  mysqli \
+  bcmath \
   zip
 
 
